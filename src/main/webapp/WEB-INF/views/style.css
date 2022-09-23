@@ -1,0 +1,44 @@
+@charset "UTF-8";
+
+div {
+	border-style: solid;
+	border-color: black;
+	border-width: thin;
+	background-color: red;
+}
+
+#header {
+	width: 60%;
+
+	margin-bottom: 0;
+	margin-left: 0;
+	margin-right: 0;
+	margin-top: auto;
+	
+}
+
+#main {
+	
+	width: 60%;
+
+	margin-bottom: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-top: 0px;
+}
+
+#side{
+	position: fixed;
+	visibility: hidden;
+	width: 210px;
+	height: 100%;
+	margin:110px 110px 110px 0px;
+	
+}
+
+#footer{
+	
+	width: 60%;
+	margin: 0 0 0 auto;
+	bottom: 1px;
+}
