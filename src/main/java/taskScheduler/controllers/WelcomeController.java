@@ -1,6 +1,5 @@
 package taskScheduler.controllers;
 
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,12 +33,15 @@ public class WelcomeController {
 	
 	@GetMapping("/main")
 	public String toMainPage() {
-		User user = (User)MainDAO.read(User.class, "ggg5");
+		User user = new User("zeka","ggg5");
+		MainDAO.create(user);
+		user = (User)MainDAO.read(User.class, "ggg5");
 		System.out.println(user.getEmail()+" "+user.getUsername());
 		user.setUsername("nike");
 		MainDAO.update(user);
 		user = (User)MainDAO.read(User.class, "ggg5");
 		System.out.println(user.getEmail()+" "+user.getUsername());
+		MainDAO.delete(user);
 		return "main";
 	}
 }
