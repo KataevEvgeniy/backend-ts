@@ -1,38 +1,50 @@
-package taskScheduler.config;
+package taskScheduler.DAOLayer;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MyDAO {
-    private static final String URL = "jdbc:postgresql://localhost:5432/users";
-    private static final String USERNAME = "postgres";
-    private static final String PASSWORD = "123";
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 
-    private static Connection connection;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
 
-    static {
-        try {
-            connection = DriverManager.getConnection(URL,USERNAME,PASSWORD);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+import taskScheduler.User;
+
+public class MainDAO {
+	public static final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("persistence");
+	
+    
+    public static String create(Object obj) {
+    	EntityManager entityManager = entityManagerFactory.createEntityManager();
+    	entityManager.getTransaction().begin();
+    	entityManager.persist(obj);
+		entityManager.getTransaction().commit();
+    	entityManager.close();
+    	return "success";
     }
-
-    public static List<String> index(){
-        List<String> strs = new ArrayList<>();
-
-        try {
-            Statement statement = connection.createStatement();
-            ResultSet result = statement.executeQuery("SELECT * FROM employee");
-            while (result.next()){
-                System.out.println(result.getInt("id")+result.getString("firstname"));
-                strs.add(result.getString("id"));
-                strs.add(result.getString("id"));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return strs;
+    
+    public static Object read(Class<?> classType, String id) {
+    	EntityManager entityManager = entityManagerFactory.createEntityManager();
+    	Object obj = entityManager.find(classType, id);
+    	entityManager.close();
+    	return obj;
+    }
+    
+    public static String update(Object obj) {
+    	EntityManager entityManager = entityManagerFactory.createEntityManager();
+    	entityManager.getTransaction().begin();
+    	entityManager.merge(obj);
+    	entityManager.getTransaction().commit();
+    	entityManager.close();
+    	return "success";
+    }
+    
+    public static String delete() {
+    	
+    	return "success";
     }
 }
