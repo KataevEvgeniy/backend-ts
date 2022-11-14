@@ -1,5 +1,6 @@
 package taskScheduler.DAOLayer;
 
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -12,29 +13,33 @@ import taskScheduler.UserTask;
 
 
 public class MainDAO {
-	public static final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("persistence");
+	public static final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("persistence");//name use from persistence.xml
 	
 	public static int num = 0;
     
-    public static String create(Object obj){
+    public static String create(Object obj) throws SQLDataException{
     	EntityManager em = entityManagerFactory.createEntityManager();
     	em.getTransaction().begin();
     	em.persist(obj);
+    	try {
     	em.getTransaction().commit();
+    	} catch(Exception e) {
+    		throw new SQLDataException(obj.toString() + " already exists in the database");
+    	}
     	em.close();
     	return "success";
     }
     
-    public static Object read(Class<?> classType, String id) {
+    public static Object read(Class<?> entityClass, String id) {
     	EntityManager em = entityManagerFactory.createEntityManager();
-    	Object obj = em.find(classType, id);
+    	Object obj = em.find(entityClass, id);
     	em.close();
     	return obj;
     }
     
-    public static Object read(Class<?> classType, long id) {
+    public static Object read(Class<?> entityClass, long id) {
     	EntityManager em = entityManagerFactory.createEntityManager();
-    	Object obj = em.find(classType, id);
+    	Object obj = em.find(entityClass, id);
     	em.close();
     	return obj;
     }
