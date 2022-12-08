@@ -9,10 +9,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.*;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -46,6 +43,7 @@ import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import antlr.collections.List;
 import taskScheduler.User;
 import taskScheduler.UserTask;
 import taskScheduler.DAOLayer.MainDAO;
@@ -67,14 +65,11 @@ public class WelcomeController {
 		try {
 			ObjectMapper mapper = new ObjectMapper(); //Deserialization request JSON
 			user = mapper.readValue((new StringReader(userRegisterData)), User.class);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} catch (IOException e) {e.printStackTrace();}
 		
-		if(user == null) return new ResponseEntity<String>("User may not have been initialized", headers, HttpStatus.BAD_REQUEST);
+		if(user == null) return new ResponseEntity<String>("User may not have been initialized", HttpStatus.BAD_REQUEST);
+		
 		user.encryptPassword();
-		
 		
 		try {
 			MainDAO.create(user);
@@ -83,11 +78,11 @@ public class WelcomeController {
 		}
 		
 		AuthToken token = new AuthToken(user);
-		EncryptedAuthToken encryptedToken = token.encryptToken();
+		EncryptedAuthToken encryptedToken = token.encrypt();
 		
-	    headers.add("Authorization", encryptedToken.getEncryptedStringToken());
+	    headers.add("Authorization", encryptedToken.toString());
 	    headers.add("Access-Control-Expose-Headers", "Authorization");
-		return new ResponseEntity<String>("Register is accept", headers, HttpStatus.CREATED);
+		return new ResponseEntity<String>("Login is accept", headers, HttpStatus.CREATED);
 	}
 	
 	@PostMapping(path="/login", consumes ={"application/json"})
@@ -102,7 +97,7 @@ public class WelcomeController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if(loginingUser == null) return new ResponseEntity<String>("User may not have been initialized", headers, HttpStatus.BAD_REQUEST);
+		if(loginingUser == null) return new ResponseEntity<String>("User may not have been initialized", HttpStatus.BAD_REQUEST);
 		loginingUser.encryptPassword();
 		
 		User verifyUser = (User)MainDAO.read(User.class, loginingUser.getEmail());
@@ -111,7 +106,7 @@ public class WelcomeController {
 		}
 		
 		AuthToken token = new AuthToken(loginingUser);
-		EncryptedAuthToken encryptedToken = token.encryptToken();
+		EncryptedAuthToken encryptedToken = token.encrypt();
 		
 	    headers.add("Authorization", encryptedToken.getEncryptedStringToken());
 	    headers.add("Access-Control-Expose-Headers", "Authorization");
@@ -123,11 +118,75 @@ public class WelcomeController {
 		var encryptedToken = new EncryptedAuthToken(token);
 		try {
 			if(encryptedToken.isTrue()) {
-				return new ResponseEntity<String>("Token is true", new HttpHeaders(), HttpStatus.ACCEPTED);
+				return new ResponseEntity<String>("Token is true", HttpStatus.ACCEPTED);
 			}
 		} catch (BadPaddingException e) {
-			return new ResponseEntity<String>("Token is expired", new HttpHeaders(), HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<String>("Token is expired", HttpStatus.BAD_REQUEST);
 		}
-		return new ResponseEntity<String>("Token is false", new HttpHeaders(), HttpStatus.BAD_REQUEST);
+		return new ResponseEntity<String>("Token is false", HttpStatus.BAD_REQUEST);
+	}
+	
+	@PostMapping(path="/saveTask", consumes ={"application/json"})
+	public ResponseEntity<String> saveTask(@RequestBody String taskData,@RequestHeader(name = "Authorization") String token) {
+		UserTask task = new UserTask();
+		String userEmail = "";
+		
+		try { 
+			AuthToken decryptedToken = (new EncryptedAuthToken(token)).decrypt();
+			userEmail = decryptedToken.getUserEmail();
+		} catch (BadPaddingException e) {
+			return new ResponseEntity<String>("Token is expired", HttpStatus.BAD_REQUEST);
+		}
+		
+		try {
+			ObjectMapper mapper = new ObjectMapper(); //Deserialization requested JSON
+			task = mapper.readValue((new StringReader(taskData)), UserTask.class);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		task.setEmail(userEmail);
+		try {
+			MainDAO.create(task);
+		} catch (SQLDataException e) {
+			return new ResponseEntity<String>("Task didn't created", HttpStatus.BAD_REQUEST);
+		}
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("task-id", Long.toString(task.getId()));
+
+	    headers.add("Access-Control-Expose-Headers", "task-id");
+		return new ResponseEntity<String>("Task created", headers, HttpStatus.CREATED);
+	}
+	
+	
+	@GetMapping(path="/getAllTasks")
+	public ResponseEntity<String> getAllTasks(@RequestHeader(name = "Authorization") String token) {
+		var encryptedToken = new EncryptedAuthToken(token);
+		String email;
+		String JSONlist = "";
+		
+		try {
+			if(!encryptedToken.isTrue()) {
+				return new ResponseEntity<String>("Token is false", HttpStatus.BAD_REQUEST);
+			}
+			email = encryptedToken.decrypt().getUserEmail();
+		} catch (BadPaddingException e) {
+			return new ResponseEntity<String>("Token is expired", HttpStatus.BAD_REQUEST);
+		}
+		
+		@SuppressWarnings (value="unchecked")
+		ArrayList<UserTask> list = (ArrayList<UserTask>) MainDAO.readAll(UserTask.class,email);
+		
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			JSONlist = mapper.writeValueAsString(list);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new ResponseEntity<String>(JSONlist,HttpStatus.ACCEPTED);
 	}
 }

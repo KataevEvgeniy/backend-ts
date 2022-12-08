@@ -5,6 +5,7 @@ package taskScheduler.tokens;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -18,24 +19,33 @@ import taskScheduler.User;
 @Getter
 public class AuthToken {
 	private String token;
+	private String userEmail;
+	private String key;
 	
 	public AuthToken(User user){
-		this.token = DatatypeConverter.printHexBinary(AutoUpdatingKey.getKey().getEncoded()) + " " + user.getEmail();
+		this.userEmail = user.getEmail();
+		this.key = DatatypeConverter.printHexBinary(AutoUpdatingKey.getKey().getEncoded());
+		this.token = this.key + " " + this.userEmail;
 	}
 	
-	public EncryptedAuthToken encryptToken() {
-		byte[] cipheredText = new byte[0];
+	public AuthToken(String token){
+		this.token = token;
+		String[] arrayToken = token.split(" ");
+		this.key = arrayToken[0];
+		this.userEmail = arrayToken[1];
+	}
+	
+	public EncryptedAuthToken encrypt() {
+		byte[] encryptedToken = new byte[0];
 		try {
 			Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
 			cipher.init(Cipher.ENCRYPT_MODE, AutoUpdatingKey.getKey());
-			cipheredText = cipher.doFinal(token.getBytes("UTF-8"));
+			encryptedToken = cipher.doFinal(token.getBytes("UTF-8"));
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-
-		String encryptToken = DatatypeConverter.printHexBinary(cipheredText);
-		return new EncryptedAuthToken(encryptToken);
+		return new EncryptedAuthToken(DatatypeConverter.printHexBinary(encryptedToken));
 	}
 	
 }

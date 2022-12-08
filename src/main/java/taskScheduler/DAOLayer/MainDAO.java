@@ -2,6 +2,7 @@ package taskScheduler.DAOLayer;
 
 import java.sql.SQLDataException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -24,7 +25,7 @@ public class MainDAO {
     	try {
     	em.getTransaction().commit();
     	} catch(Exception e) {
-    		throw new SQLDataException(obj.toString() + " already exists in the database");
+    		throw new SQLDataException(obj.getClass() + " already exists in the database");
     	}
     	em.close();
     	return "success";
@@ -44,11 +45,18 @@ public class MainDAO {
     	return obj;
     }
     
-    public static long getMax(Class<?> cl, String field) {
+    public static long getMax(Class<?> cl, String row) {
     	EntityManager em = entityManagerFactory.createEntityManager();
-    	long max = (long) em.createQuery("SELECT MAX(e." + field + ") FROM " + cl.getName() + " e").getSingleResult();
+    	long max = (long) em.createQuery("SELECT MAX(e." + row + ") FROM " + cl.getName() + " e").getSingleResult();
     	em.close();
     	return max;
+    }
+    
+    public static List<?> readAll(Class<?> cl, String email){
+    	EntityManager em = entityManagerFactory.createEntityManager();
+    	List<?> list = em.createQuery("SELECT e FROM " + cl.getName() + " e where e.email = '" + email +"'",cl).getResultList();
+    	em.close();
+    	return list;
     }
     
     public static List<?> readAll(Class<?> cl) {

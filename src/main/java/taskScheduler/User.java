@@ -33,12 +33,6 @@ public class User {
 	private String email;
 	private String password;
 	
-	public UserTask createTask(String name,String description) {
-		Random rnd = new Random();
-		UserTask userTask = new UserTask(MainDAO.num++,name,description,this.email);
-		return userTask;
-	}
-	
 	public void encryptPassword() {
 		try { 
 			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
